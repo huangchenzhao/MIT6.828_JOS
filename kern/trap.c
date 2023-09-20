@@ -88,7 +88,7 @@ trap_init(void)
 	SETGATE(idt[T_DIVIDE], 0, GD_KT, handler_T_DIVIDE, 0);
 	SETGATE(idt[T_DEBUG], 0, GD_KT, handler_T_DEBUG, 0);
 	SETGATE(idt[T_NMI], 0, GD_KT, handler_T_NMI, 0);
-	SETGATE(idt[T_BRKPT], 0, GD_KT, handler_T_BRKPT, 0);
+	SETGATE(idt[T_BRKPT], 0, GD_KT, handler_T_BRKPT, 3);
 	SETGATE(idt[T_OFLOW], 0, GD_KT, handler_T_OFLOW, 0);
 	SETGATE(idt[T_BOUND], 0, GD_KT, handler_T_BOUND, 0);
 	SETGATE(idt[T_ILLOP], 0, GD_KT, handler_T_ILLOP, 0);
@@ -183,14 +183,31 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
-	// Unexpected trap: The user process or the kernel has a bug.
-	print_trapframe(tf);
-	if (tf->tf_cs == GD_KT)
-		panic("unhandled trap in kernel");
-	else {
-		env_destroy(curenv);
-		return;
+	switch(tf->tf_trapno){
+		case T_PGFLT:
+			page_fault_handler(tf);
+			break;
+		case T_BRKPT:
+			monitor(tf);
+			break;
+		case T_SYSCALL:
+			tf->tf_regs.reg_eax=syscall(
+				tf->tf_regs.reg_eax,
+				tf->tf_regs.reg_edx,
+				tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx,
+				tf->tf_regs.reg_edi,
+				tf->tf_regs.reg_esi);
+			break;
+		default:
+			// Unexpected trap: The user process or the kernel has a bug.
+			print_trapframe(tf);
+			if (tf->tf_cs == GD_KT)
+				panic("unhandled trap in kernel");
+			else {
+				env_destroy(curenv);
+				return;
+			}
 	}
 }
 

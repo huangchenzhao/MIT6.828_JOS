@@ -398,7 +398,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
             else
             {
                 new_page_table_page->pp_ref++;
-                *pdx = page2pa(new_page_table_page) | PTE_P | PTE_W;
+                *pdx = page2pa(new_page_table_page) | PTE_P | PTE_W | PTE_U;
             }
         }
     }
