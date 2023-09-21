@@ -12,25 +12,24 @@
 #include <kern/kdebug.h>
 #include <kern/trap.h>
 
-#define CMDBUF_SIZE	80	// enough for one VGA text line
+#define CMDBUF_SIZE 80 // enough for one VGA text line
 
-
-struct Command {
+struct Command
+{
 	const char *name;
 	const char *desc;
 	// return -1 to force monitor to exit
-	int (*func)(int argc, char** argv, struct Trapframe* tf);
+	int (*func)(int argc, char **argv, struct Trapframe *tf);
 };
 
 static struct Command commands[] = {
-	{ "help", "Display this list of commands", mon_help },
-	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
-};
+	{"help", "Display this list of commands", mon_help},
+	{"kerninfo", "Display information about the kernel", mon_kerninfo},
+	{"backtrace", "Display stack backtrace about the kernel", mon_backtrace}};
 
 /***** Implementations of basic kernel monitor commands *****/
 
-int
-mon_help(int argc, char **argv, struct Trapframe *tf)
+int mon_help(int argc, char **argv, struct Trapframe *tf)
 {
 	int i;
 
@@ -39,8 +38,7 @@ mon_help(int argc, char **argv, struct Trapframe *tf)
 	return 0;
 }
 
-int
-mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
+int mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 {
 	extern char _start[], entry[], etext[], edata[], end[];
 
@@ -51,18 +49,35 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 	cprintf("  edata  %08x (virt)  %08x (phys)\n", edata, edata - KERNBASE);
 	cprintf("  end    %08x (virt)  %08x (phys)\n", end, end - KERNBASE);
 	cprintf("Kernel executable memory footprint: %dKB\n",
-		ROUNDUP(end - entry, 1024) / 1024);
+			ROUNDUP(end - entry, 1024) / 1024);
 	return 0;
 }
 
-int
-mon_backtrace(int argc, char **argv, struct Trapframe *tf)
+int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
 	// Your code here.
+
+	cprintf("Stack backtrace:\n");
+	int temp_ebp = read_ebp();
+	while (temp_ebp != 0x0)
+	{
+		int *temp_eip = (int *)(temp_ebp + 1 * 4);
+		int *temp_arg1 = (int *)(temp_ebp + 2 * 4);
+		int *temp_arg2 = (int *)(temp_ebp + 3 * 4);
+		int *temp_arg3 = (int *)(temp_ebp + 4 * 4);
+		int *temp_arg4 = (int *)(temp_ebp + 5 * 4);
+		int *temp_arg5 = (int *)(temp_ebp + 6 * 4);
+		cprintf("  ebp %x eip %x args %08x %08x %08x %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2, *temp_arg3, *temp_arg4, *temp_arg5);
+		//cprintf("  ebp %x eip %x args %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2); //2 arguments
+		//cprintf("  ebp %x eip %x args %08x %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2, *temp_arg3); //3 arguments
+		struct Eipdebuginfo temp_info;
+		debuginfo_eip((uintptr_t)(*temp_eip), &temp_info);
+		cprintf("         %s:%d: %.*s+%d\n", temp_info.eip_file, temp_info.eip_line, temp_info.eip_fn_namelen, temp_info.eip_fn_name, *temp_eip - temp_info.eip_fn_addr);
+		temp_ebp = (int)(*((int *)temp_ebp));
+	}
+
 	return 0;
 }
-
-
 
 /***** Kernel monitor command interpreter *****/
 
@@ -79,7 +94,8 @@ runcmd(char *buf, struct Trapframe *tf)
 	// Parse the command buffer into whitespace-separated arguments
 	argc = 0;
 	argv[argc] = 0;
-	while (1) {
+	while (1)
+	{
 		// gobble whitespace
 		while (*buf && strchr(WHITESPACE, *buf))
 			*buf++ = 0;
@@ -87,7 +103,8 @@ runcmd(char *buf, struct Trapframe *tf)
 			break;
 
 		// save and scan past next arg
-		if (argc == MAXARGS-1) {
+		if (argc == MAXARGS - 1)
+		{
 			cprintf("Too many arguments (max %d)\n", MAXARGS);
 			return 0;
 		}
@@ -100,7 +117,8 @@ runcmd(char *buf, struct Trapframe *tf)
 	// Lookup and invoke the command
 	if (argc == 0)
 		return 0;
-	for (i = 0; i < ARRAY_SIZE(commands); i++) {
+	for (i = 0; i < ARRAY_SIZE(commands); i++)
+	{
 		if (strcmp(argv[0], commands[i].name) == 0)
 			return commands[i].func(argc, argv, tf);
 	}
@@ -108,8 +126,7 @@ runcmd(char *buf, struct Trapframe *tf)
 	return 0;
 }
 
-void
-monitor(struct Trapframe *tf)
+void monitor(struct Trapframe *tf)
 {
 	char *buf;
 
@@ -118,8 +135,8 @@ monitor(struct Trapframe *tf)
 
 	if (tf != NULL)
 		print_trapframe(tf);
-
-	while (1) {
+	while (1)
+	{
 		buf = readline("K> ");
 		if (buf != NULL)
 			if (runcmd(buf, tf) < 0)
