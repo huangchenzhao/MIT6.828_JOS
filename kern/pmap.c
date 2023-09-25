@@ -275,6 +275,13 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
+    for(int i=0;i<NCPU;i++){
+        boot_map_region(kern_pgdir,
+                        KSTACKTOP - i * (KSTKSIZE + KSTKGAP) - KSTKSIZE,
+                        KSTKSIZE,
+                        PADDR(percpu_kstacks[i]),
+                        PTE_W);
+    }
 
 }
 
@@ -318,9 +325,14 @@ void page_init(void)
     pages[0].pp_link = NULL;
     for (i = 1; i < npages_basemem; i++)
     {
-        pages[i].pp_ref = 0;
-        pages[i].pp_link = page_free_list;
-        page_free_list = &pages[i];
+        if(i==MPENTRY_PADDR/PGSIZE){
+            pages[i].pp_ref = 1;
+            pages[i].pp_link = NULL;
+        }else{
+            pages[i].pp_ref = 0;
+            pages[i].pp_link = page_free_list;
+            page_free_list = &pages[i];
+        }
     }
     for (; i < ROUNDUP(PADDR(boot_alloc(0)), PGSIZE) / PGSIZE; i++)
     {
@@ -333,15 +345,6 @@ void page_init(void)
         pages[i].pp_link = page_free_list;
         page_free_list = &pages[i];
     }
-
-    /* lab 4 code, what is the differece? I dont know yet
-    size_t i;
-	for (i = 0; i < npages; i++) {
-		pages[i].pp_ref = 0;
-		pages[i].pp_link = page_free_list;
-		page_free_list = &pages[i];
-	}
-    */
 }
 
 //
@@ -623,7 +626,13 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	// panic("mmio_map_region not implemented");
+    uintptr_t begin = base;
+    uintptr_t end = ROUNDUP(base+size, PGSIZE);
+    if(end > MMIOLIM) panic("the reservation would overflow MMIOLIM!\n");
+    boot_map_region(kern_pgdir, begin, end-begin, pa, PTE_PCD | PTE_PWT | PTE_W);
+    base = end;
+    return (void*)begin;
 }
 
 static uintptr_t user_mem_check_addr;
