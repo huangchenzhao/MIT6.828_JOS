@@ -66,7 +66,9 @@ i386_init(void)
 	// Touch all you want.
 	ENV_CREATE(user_primes, ENV_TYPE_USER);
 #endif // TEST*
-
+	ENV_CREATE(user_yield, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
+    ENV_CREATE(user_yield, ENV_TYPE_USER);
 	// Schedule and run the first user environment!
 	sched_yield();
 }
@@ -124,7 +126,7 @@ mp_main(void)
 	lock_kernel();
 	sched_yield();
 	// Remove this after you finish Exercise 6
-	for (;;);
+	// for (;;);
 }
 
 /*
