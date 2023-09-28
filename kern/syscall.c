@@ -43,6 +43,13 @@ sys_getenvid(void)
 	return curenv->env_id;
 }
 
+// Returns the current cpu's id.
+static int
+sys_getcpunum(void)
+{
+	return cpunum();
+}
+
 // Destroy a given environment (possibly the currently running environment).
 //
 // Returns 0 on success, < 0 on error.  Errors are:
@@ -282,6 +289,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_cgetc();
 		case SYS_getenvid:
 			return sys_getenvid();
+		case SYS_getcpunum:
+			return sys_getcpunum();
 		case SYS_env_destroy:
 			return sys_env_destroy(a1);
 		case SYS_yield:

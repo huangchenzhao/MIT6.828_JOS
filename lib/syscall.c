@@ -61,6 +61,12 @@ sys_getenvid(void)
 	 return syscall(SYS_getenvid, 0, 0, 0, 0, 0, 0);
 }
 
+int
+sys_getcpunum(void)
+{
+	 return syscall(SYS_getcpunum, 0, 0, 0, 0, 0, 0);
+}
+
 void
 sys_yield(void)
 {
