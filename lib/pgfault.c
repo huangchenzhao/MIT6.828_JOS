@@ -32,7 +32,7 @@ set_pgfault_handler(void (*handler)(struct UTrapframe *utf))
 		if(sys_page_alloc(0, (void*)(UXSTACKTOP - PGSIZE), PTE_SYSCALL)!=0){
 			panic("sys_page_alloc failed!\n");
 		}
-		if(sys_env_set_pgfault_upcall(sys_getenvid(), _pgfault_upcall)!=0){
+		if(sys_env_set_pgfault_upcall(0, _pgfault_upcall)!=0){
 			panic("sys_env_set_pgfault_upcall failed!\n");
 		}
 	}

@@ -383,6 +383,7 @@ page_fault_handler(struct Trapframe *tf)
 		utf->utf_err=tf->tf_err;
 		utf->utf_fault_va=fault_va;
 		utf->utf_regs=tf->tf_regs;
+		utf->utf_esp=tf->tf_esp;
 		tf->tf_esp=(uintptr_t)(utf);
 		tf->tf_eip=(uintptr_t)(curenv->env_pgfault_upcall);
 		env_run(curenv);
