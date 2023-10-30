@@ -91,6 +91,13 @@ trap_init(void)
 	void handler_T_MCHK();
 	void handler_T_SIMDERR();
 	void handler_T_SYSCALL();
+	// IRQs
+	void handler_IRQ_TIMER();
+	void handler_IRQ_KBD();
+	void handler_IRQ_SERIAL();
+	void handler_IRQ_SPURIOUS();
+	void handler_IRQ_IDE();
+	void handler_IRQ_ERROR();
 
 	SETGATE(idt[T_DIVIDE], 0, GD_KT, handler_T_DIVIDE, 0);
 	SETGATE(idt[T_DEBUG], 0, GD_KT, handler_T_DEBUG, 0);
@@ -111,6 +118,14 @@ trap_init(void)
 	SETGATE(idt[T_MCHK], 0, GD_KT, handler_T_MCHK, 0);
 	SETGATE(idt[T_SIMDERR], 0, GD_KT, handler_T_SIMDERR, 0);
 	SETGATE(idt[T_SYSCALL], 0, GD_KT, handler_T_SYSCALL, 3);
+
+	//IRQs
+	SETGATE(idt[IRQ_OFFSET + IRQ_TIMER], 0, GD_KT, handler_IRQ_TIMER, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_KBD], 0, GD_KT, handler_IRQ_KBD, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SERIAL], 0, GD_KT, handler_IRQ_SERIAL, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_SPURIOUS], 0, GD_KT, handler_IRQ_SPURIOUS, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_IDE], 0, GD_KT, handler_IRQ_IDE, 0);
+	SETGATE(idt[IRQ_OFFSET + IRQ_ERROR], 0, GD_KT, handler_IRQ_ERROR, 0);
 
 	// Per-CPU setup 
 	trap_init_percpu();
