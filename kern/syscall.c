@@ -301,17 +301,17 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	struct Env* recv_e;
 	if(envid2env(envid, &recv_e, 0) == -E_BAD_ENV) return -E_BAD_ENV;
 	if(recv_e->env_status != ENV_NOT_RUNNABLE || recv_e->env_ipc_recving == 0) return -E_IPC_NOT_RECV;
-	if((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) return -E_INVAL;
-	if((perm | PTE_SYSCALL) != PTE_SYSCALL) return -E_INVAL;
 	if((uint32_t)srcva < UTOP){
 		if(ROUNDUP(srcva, PGSIZE)!=srcva){
 			return -E_INVAL;
 		}
+		if((perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P)) return -E_INVAL;
+		if((perm | PTE_SYSCALL) != PTE_SYSCALL) return -E_INVAL;
+		pte_t* pte;
+		struct PageInfo* pg;
+		if((pg = page_lookup(curenv->env_pgdir, srcva, &pte)) == NULL) return -E_INVAL;
+		if((!((*pte) & PTE_W)) && (perm & PTE_W)) return -E_INVAL;
 		if((uint32_t)recv_e->env_ipc_dstva < UTOP){
-			pte_t* pte;
-			struct PageInfo* pg;
-			if((pg = page_lookup(curenv->env_pgdir, srcva, &pte)) == NULL) return -E_INVAL;
-			if((!((*pte) & PTE_W)) && (perm & PTE_W)) return -E_INVAL;
 			if(page_insert(recv_e->env_pgdir, pg, recv_e->env_ipc_dstva, perm)!=0) return -E_NO_MEM;
 			recv_e->env_ipc_perm = perm;
 		}
@@ -348,6 +348,7 @@ sys_ipc_recv(void *dstva)
 	curenv->env_ipc_dstva = dstva;
 	curenv->env_ipc_recving = 1;
 	curenv->env_status = ENV_NOT_RUNNABLE;
+	curenv->env_tf.tf_regs.reg_eax=0;
 	sched_yield();
 	return 0;
 }
