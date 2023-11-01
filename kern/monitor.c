@@ -68,6 +68,8 @@ int mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 		int *temp_arg4 = (int *)(temp_ebp + 5 * 4);
 		int *temp_arg5 = (int *)(temp_ebp + 6 * 4);
 		cprintf("  ebp %x eip %x args %08x %08x %08x %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2, *temp_arg3, *temp_arg4, *temp_arg5);
+		//cprintf("  ebp %x eip %x args %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2); //2 arguments
+		//cprintf("  ebp %x eip %x args %08x %08x %08x\n", temp_ebp, *temp_eip, *temp_arg1, *temp_arg2, *temp_arg3); //3 arguments
 		struct Eipdebuginfo temp_info;
 		debuginfo_eip((uintptr_t)(*temp_eip), &temp_info);
 		cprintf("         %s:%d: %.*s+%d\n", temp_info.eip_file, temp_info.eip_line, temp_info.eip_fn_namelen, temp_info.eip_fn_name, *temp_eip - temp_info.eip_fn_addr);
